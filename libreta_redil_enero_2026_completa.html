@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>REDIL | Enero 2026 – Programa con Enseñanza</title>
+<style>
+:root{
+--paper-bg:#ffffff;
+--ink:#2c3e50;
+--muted:#6b7280;
+--bar:#101827;
+--accent:#d35400;
+--accent2:#8e44ad;
+--ok:#27ae60;
+--info:#3498db;
+--warn:#f39c12;
+--bible:#c0392b;
+--idea:#1e8449;
+--repeat:#0f766e;
+--question:#7c3aed;
+--shadow:0 10px 30px rgba(0,0,0,0.10);
+--radius:14px;
+}
+*{box-sizing:border-box}
+body{
+background:var(--app-bg);
+font-family:Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+margin:0;
+display:flex;
+flex-direction:column;
+align-items:center;
+color:var(--ink);
+padding-top:92px;
+}
+#top-bar{
+position:fixed;
+top:0;
+left:0;
+right:0;
+width:100%;
+background:var(--topbar-bg);
+color:var(--topbar-ink);
+padding:10px 12px;
+display:flex;
+justify-content:center;
+align-items:center;
+gap:10px;
+z-index:1000;
+box-shadow:0 4px 14px rgba(0,0,0,0.35);
+flex-wrap:wrap;
+}
+#display{
+font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Courier New",monospace;
+font-size:2.4rem;
+font-weight:800;
+color:var(--warn);
+min-width:140px;
+text-align:center;
+}
+.btn{
+padding:10px 14px;
+border:none;
+border-radius:10px;
+cursor:pointer;
+font-weight:800;
+letter-spacing:.3px;
+font-size:13px;
+transition:transform .08s ease,filter .2s ease;
+user-select:none;
+}
+.btn:active{transform:scale(.98)}
+#startStop{background:var(--ok);color:#fff}
+#saveBtn{background:var(--info);color:#fff}
+#downloadBtn{background:var(--accent2);color:#fff}
+.darkBtn{background:#111827;color:#fff;border:1px solid rgba(255,255,255,0.2)}
+#colorPicker{width:44px;height:38px;border:none;background:transparent;padding:0}
+.shell{
+width:95%;
+max-width:980px;
+margin:16px 0 40px 0;
+}
+.notebook-page{
+background:var(--paper-bg);
+width:100%;
+padding:34px 22px;
+box-shadow:var(--shadow);
+border-left:14px solid var(--accent);
+min-height:70vh;
+font-size:26px;
+line-height:1.6;
+outline:none;
+border-radius:var(--radius);
+}
+@media (min-width:768px){
+.notebook-page{padding:64px 70px;border-left:18px solid var(--accent);font-size:32px}
+}
+h1{color:var(--accent);font-size:1.8em;text-align:center;border-bottom:3px solid var(--line);padding-bottom:15px;margin:0 0 40px 0}
+h2{color:var(--accent);font-size:1.35em;text-transform:uppercase;margin-top:50px;border-left:8px solid var(--accent);padding-left:18px}
+h3{color:var(--accent);font-size:1.15em;font-style:italic;margin-top:28px}
+.bible-text{color:var(--bible);font-weight:600;display:block;margin:12px 0;font-style:italic}
+.citation{color:#111827;font-weight:900;display:block;text-decoration:underline;font-size:.9em}
+.sub-point{color:var(--idea);font-weight:900;display:block;margin-top:26px;border-bottom:1px solid var(--line);padding-bottom:10px}
+hr{border:0;height:2px;background:var(--line);margin:44px 0}
+.mark-idea{background:rgba(30,132,73,0.12);border-left:10px solid var(--idea);padding:12px 14px;border-radius:12px;display:block;margin:16px 0}
+.mark-repeat{background:rgba(15,118,110,0.12);border-left:10px solid var(--repeat);padding:12px 14px;border-radius:12px;display:block;margin:16px 0}
+.mark-question{background:rgba(124,58,237,0.12);border-left:10px solid var(--question);padding:12px 14px;border-radius:12px;display:block;margin:16px 0;font-weight:900}
+#toast{
+position:fixed;
+bottom:18px;
+background:#22c55e;
+color:#052e16;
+padding:10px 18px;
+border-radius:999px;
+display:none;
+z-index:3000;
+font-weight:900;
+box-shadow:0 12px 25px rgba(0,0,0,0.18);
+}
+@media print{
+#top-bar,#toast{display:none !important}
+body{background:#fff}
+.shell{width:100%;max-width:none;margin:0}
+.notebook-page{box-shadow:none;border-left:10px solid var(--accent);border-radius:0;min-height:auto}
+}
+
+:root.light{
+--app-bg:#f4f7f6;
+--paper-bg:#ffffff;
+--ink:#2c3e50;
+--topbar-bg:#ffffff;
+--topbar-ink:#0b1220;
+--line:#e5e7eb;
+}
+:root.dark{
+--app-bg:#050814;
+--paper-bg:#0b1220;
+--ink:#e5e7eb;
+--topbar-bg:#0b1220;
+--topbar-ink:#ffffff;
+--line:rgba(255,255,255,0.12);
+}
+</style>
+</head>
+<body>
+
+<div id="top-bar">
+<div id="display">00:00:00</div>
+<button id="startStop" class="btn" type="button">Iniciar</button>
+<button id="resetTimer" class="btn darkBtn" type="button" title="Reiniciar a cero">Reiniciar</button>
+<button id="saveBtn" class="btn" type="button">💾 Guardar</button>
+<button id="downloadBtn" class="btn" type="button">📥 Exportar</button>
+<button id="themeBtn" class="btn darkBtn" type="button">🌙 / ☀️</button>
+<button id="undoBtn" class="btn darkBtn" type="button" title="Deshacer">↩︎</button>
+<button id="redoBtn" class="btn darkBtn" type="button" title="Rehacer">↪︎</button>
+<button id="zoomOut" class="btn darkBtn" type="button">A-</button>
+<button id="zoomIn" class="btn darkBtn" type="button">A+</button>
+<button id="colorBtn" class="btn darkBtn" type="button">Color</button>
+<input id="colorPicker" type="color" value="#2c3e50" aria-label="Color de fuente">
+</div>
+
+<div class="shell">
+<div class="notebook-page" id="editor" contenteditable="true" spellcheck="false">
+<h1>REDIL | ENERO 2026</h1>
+
+<p><strong>Liderazgo de Grupos de Cuidado y Servidores de Ministerios</strong></p>
+
+<hr>
+
+<h2>Propósito del REDIL</h2>
+
+<p>
+Alinear el corazón de líderes y servidores con el obrar del Espíritu Santo, fortalecer la conciencia del servicio como colaboración con Dios y celebrar la multiplicación de lo que Él está haciendo en la iglesia.
+</p>
+
+<hr>
+
+<h2>PROGRAMA DEL REDIL</h2>
+
+<h2>1. Recepción e inicio con refrigerio</h2>
+<p>
+Ambiente cuidado y cercano.<br>
+Música instrumental.<br>
+Refrigerio sencillo y conversación breve.
+</p>
+
+<hr>
+
+<h2>2. Bienvenida e instrucciones de la noche</h2>
+<p>
+Bienvenida general.<br>
+Explicación breve del propósito del REDIL y del orden de la noche.
+</p>
+
+<p>
+Espacio de alineación del corazón, reconocimiento de lo que Dios está haciendo y envío como cuerpo.
+</p>
+
+<hr>
+
+<h2>3. Dinámica de integración</h2>
+<p>
+Dinámica preparada previamente para generar unidad, preparar el ambiente y disponer el corazón.
+</p>
+
+<hr>
+
+<h2>4. Momento de oración y ánimo mutuo</h2>
+<p>
+Animarnos unos a otros desde la Palabra de Dios.<br>
+Compartir brevemente una palabra y orar unos por otros.
+</p>
+
+<hr>
+
+<h2>5. Canto conjunto</h2>
+<p>
+Tiempo de adoración congregacional con gozo y gratitud.
+</p>
+
+<hr>
+
+
+<hr>
+
+<h2>6. ENSEÑANZA CENTRAL</h2>
+<h3>Servir es colaborar con lo que Dios ya está haciendo</h3>
+
+<p>
+Hoy quiero hablarles como líderes y servidores sobre la importancia de lo que hace la iglesia y sobre la transformación real que ocurre en la vida de las personas cuando el Espíritu Santo obra a través de hombres y mujeres que sirven.
+</p>
+
+<p>
+La iglesia no transforma personas por su estructura, ni por sus actividades, ni por su organización.<br>
+La transformación ocurre porque Dios decidió obrar a través de personas.
+</p>
+
+<p>
+Cada vez que servimos, no solo cumplimos una función.<br>
+Somos colaboradores de Dios en lo que Él quiere hacer en ese momento.
+</p>
+
+<p>
+Por eso es importante que cada día que vayamos a servir, tengamos conciencia de lo que implica el servicio.<br>
+El servicio es la manifestación del obrar de Dios a través de la iglesia.
+</p>
+
+<p>
+Antes de hacer algo para la iglesia, es necesario detenernos un momento y recordar que Dios obra primero en nosotros y luego a través de nosotros.
+</p>
+
+<p>
+La habilitación por medio de los dones no es un logro personal, es un privilegio.<br>
+No servimos desde la costumbre.<br>
+No servimos solo desde la capacidad.<br>
+No servimos únicamente desde el conocimiento.<br>
+Servimos desde la gracia recibida.
+</p>
+
+<hr>
+
+<h3>Pausa de conciencia antes de servir</h3>
+
+<p>
+Se invita a todos a tomarse unos minutos en silencio y reflexionar.
+</p>
+
+<p>
+Soy consciente de que, como hijo de Dios, formo parte de los colaboradores de Dios en lo que Él hará este día?
+</p>
+
+<p>
+Soy consciente de los dones que Dios me ha dado y de lo que Él hace primeramente en mí y luego a través de mí?
+</p>
+
+<p>
+Reconozco que no sirvo desde la costumbre, ni desde mi capacidad, ni desde mi conocimiento, sino desde la gracia que he recibido?
+</p>
+
+<p>
+Estoy alineado espiritualmente con mis hermanos en la fe, consciente de que el trabajo no lo realizo solo, sino en comunidad?
+</p>
+
+<hr>
+
+<h3>Otras reflexiones antes de servir</h3>
+
+<p>
+Me he preparado para este momento?
+</p>
+
+<p>
+Hay algo que debía aprender?<br>
+Hay algo que debía estudiar?<br>
+Hay algo que debía traer?<br>
+Hay algo en lo que debía meditar?<br>
+Hay alguien a quien debía rendir cuentas?
+</p>
+
+<p>
+Si es así, preguntarme con honestidad, lo hice?
+</p>
+
+<p>
+De qué manera lo que hago hoy muestra a Cristo a alguien más?
+</p>
+
+<p>
+Mi servicio de hoy trata con amigos invitados que aún no conocen del Señor?<br>
+Trata con creyentes nuevos que apenas están conociendo la vida en Cristo?<br>
+Sirvo a personas maduras en la fe o a personas de tiempo en la iglesia?<br>
+Mi colaboración tiene que ver con líderes de la iglesia?
+</p>
+
+<p>
+Esto es fundamental para que cada persona sepa cómo prepararse y cómo actuar de acuerdo al entorno al que Dios le ha llamado.
+</p>
+
+<p>
+Algunas personas sirven en más de un grupo.<br>
+Lo importante es que cada persona reconozca el impacto de su servicio en la vida de otros.
+</p>
+
+<p>
+Al cerrar mi tiempo de servicio hoy,<br>
+qué espero que haya sucedido?
+</p>
+
+<hr>
+
+<h3>Ser consciente de lo que el Espíritu Santo hace mientras servimos</h3>
+
+<p>
+Ser conscientes de que el Espíritu Santo está obrando es importante mientras servimos, para colaborar y no distraer, entorpecer o incluso hacer fuerza en contra de lo que Él está haciendo.
+</p>
+
+<p>
+Por la Escritura sabemos que el Espíritu Santo tiene un propósito al actuar y está unido a la voluntad de Dios para con nosotros.
+</p>
+
+<p>
+Él es quien convence de pecado, de justicia y de juicio, preparando a la persona para oír y entender la voz de Dios y para revelar al Hijo, ya que todo se hace por Él y para Él.
+</p>
+
+<p>
+El Espíritu Santo es quien recuerda todas las cosas que las personas han escuchado antes, para que la Palabra de Dios siga transformando sus vidas.
+</p>
+
+<p>
+Él es quien despierta y aviva el fruto del Espíritu en las personas.<br>
+Por eso, al reunirnos, ya sea en pequeños grupos o en la congregación general como servidores, debemos estar claros y atentos de que nosotros no despertamos emociones, sino que nos alineamos a lo que el Espíritu Santo hace desde el fruto.
+</p>
+
+
+<hr>
+
+<h2>7. Comisionamientos</h2>
+
+<h3>Franklin y Francelis</h3>
+<p>
+Apertura de Grupo de Cuidado para matrimonios.<br>
+Oración y envío.
+</p>
+
+<h3>Mariales</h3>
+<p>
+Multiplicación del Grupo de Jóvenes.<br>
+Reconocimiento, oración y envío.
+</p>
+
+<hr>
+
+<h2>8. Cierre</h2>
+<p>
+Oración final.<br>
+Gratitud.<br>
+Recordatorio de que servimos desde la gracia y en comunidad.
+</p>
+
+</div>
+</div>
+
+<div id="toast">✅ Guardado</div>
+
+<script>
+const STORAGE_KEY = "libreta_donde_esta_tu_fe_interactiva_v2";
+const editor = document.getElementById("editor");
+const toast = document.getElementById("toast");
+
+window.addEventListener("load", ()=>{
+const saved = localStorage.getItem(STORAGE_KEY);
+if(saved) editor.innerHTML = saved;
+});
+
+function flash(msg){
+toast.textContent = msg;
+toast.style.display="block";
+setTimeout(()=>toast.style.display="none", 1600);
+}
+
+function saveDoc(){
+localStorage.setItem(STORAGE_KEY, editor.innerHTML);
+flash("✅ Guardado");
+}
+document.getElementById("saveBtn").addEventListener("click", saveDoc);
+
+document.addEventListener("keydown", (e)=>{
+const k = e.key.toLowerCase();
+if((e.ctrlKey || e.metaKey) && k==="s"){e.preventDefault();saveDoc();}
+if((e.ctrlKey || e.metaKey) && k==="z"){e.preventDefault();document.execCommand("undo");}
+if((e.ctrlKey || e.metaKey) && (k==="y" || (e.shiftKey && k==="z"))){e.preventDefault();document.execCommand("redo");}
+});
+
+/* Undo/Redo buttons */
+document.getElementById("undoBtn").addEventListener("click", ()=>document.execCommand("undo"));
+document.getElementById("redoBtn").addEventListener("click", ()=>document.execCommand("redo"));
+
+/* Export */
+function exportHtml(){
+const content = `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>Libreta</title></head><body>${editor.innerHTML}</body></html>`;
+const blob = new Blob([content],{type:"text/html"});
+const a = document.createElement("a");
+a.href = URL.createObjectURL(blob);
+a.download = "Libreta_Donde_Esta_Tu_Fe.html";
+a.click();
+}
+
+document.getElementById("downloadBtn").addEventListener("click", ()=>{
+const choice = prompt("Escribe 1 para HTML, 2 para PDF (Imprimir)","1");
+if(choice==="2"){window.print();return;}
+exportHtml();
+});
+
+/* Timer */
+let startTime = 0;
+let elapsed = 0;
+let timerId = null;
+const disp = document.getElementById("display");
+const ssBtn = document.getElementById("startStop");
+
+function fmt(ms){
+let h = Math.floor(ms/3600000);
+let m = Math.floor((ms%3600000)/60000);
+let s = Math.floor((ms%60000)/1000);
+return `${String(h).padStart(2,"0")}:${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}`;
+}
+function tick(){elapsed = Date.now() - startTime; disp.textContent = fmt(elapsed);}
+function startTimer(){
+startTime = Date.now() - elapsed;
+timerId = setInterval(tick, 1000);
+ssBtn.textContent = "Pausar";
+ssBtn.style.background = "#ef4444";
+}
+function pauseTimer(){
+clearInterval(timerId);
+timerId = null;
+ssBtn.textContent = "Iniciar";
+ssBtn.style.background = "var(--ok)";
+}
+ssBtn.addEventListener("click", ()=>{ if(timerId) pauseTimer(); else startTimer(); });
+
+/* Font size (whole editor) */
+function currentFontSize(){
+const s = window.getComputedStyle(editor).fontSize;
+return parseFloat(s) || 32;
+}
+function setFontSize(px){
+const clamped = Math.max(18, Math.min(60, px));
+editor.style.fontSize = clamped + "px";
+flash("🔠 Tamaño: " + clamped + "px");
+}
+document.getElementById("zoomIn").addEventListener("click", ()=>setFontSize(currentFontSize()+2));
+document.getElementById("zoomOut").addEventListener("click", ()=>setFontSize(currentFontSize()-2));
+
+/* Font color (selection if any, else whole editor) */
+const picker = document.getElementById("colorPicker");
+document.getElementById("colorBtn").addEventListener("click", ()=>picker.click());
+
+function applyColor(hex){
+const sel = window.getSelection();
+if(sel && sel.toString().length>0){
+document.execCommand("styleWithCSS", false, true);
+document.execCommand("foreColor", false, hex);
+flash("🎨 Color aplicado a selección");
+return;
+}
+editor.style.color = hex;
+flash("🎨 Color aplicado a toda la libreta");
+}
+
+picker.addEventListener("input", (e)=>applyColor(e.target.value));
+
+/* Theme toggle */
+const themeBtn = document.getElementById("themeBtn");
+const root = document.documentElement;
+
+function setTheme(next){
+  root.classList.remove("light","dark");
+  root.classList.add(next);
+  localStorage.setItem("libreta_theme", next);
+}
+
+setTheme(localStorage.getItem("libreta_theme") || "light");
+
+themeBtn.addEventListener("click", ()=>{
+  const next = root.classList.contains("dark") ? "light" : "dark";
+  setTheme(next);
+});
+
+
+/* Reset timer */
+const resetBtn = document.getElementById("resetTimer");
+if (resetBtn) {
+  resetBtn.addEventListener("click", () => {
+    if (timerId) clearInterval(timerId);
+    timerId = null;
+    elapsed = 0;
+    disp.textContent = fmt(0);
+    ssBtn.textContent = "Iniciar";
+    ssBtn.style.background = "var(--ok)";
+  });
+}
+
+</script>
+
+</body>
+</html>
